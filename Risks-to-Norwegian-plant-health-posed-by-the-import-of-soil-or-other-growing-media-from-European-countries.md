@@ -1,0 +1,75 @@
+Risks to Norwegian plant health posed by the import of soil or other
+growing media from European countries
+================
+Daniel Flø
+2023-11-15
+
+### Chapter: Visualizing European Countries of Interest in R
+
+#### Overview
+
+This chapter explains how to visualize selected European countries using
+R. The script uses `rnaturalearth`, `ggplot2`, and `tidyverse` libraries
+for data manipulation and plotting.
+
+#### Steps
+
+1.  **Import Libraries**: Import `rnaturalearth`, `rnaturalearthdata`,
+    `ggplot2`, and `tidyverse`.
+
+2.  **Fetch Data**: Use `ne_countries` from `rnaturalearth` to get
+    medium-scale world data.
+
+3.  **Define Area of Interest**: List European countries of interest,
+    including Albania, Andorra, Austria, etc., up to Vatican City.
+
+4.  **Modify Data**: Add a new column “area” to indicate if a country is
+    in the area of interest. Use `mutate` from `tidyverse`.
+
+5.  **Create Visualization**: Use `ggplot` and `geom_sf` to plot the
+    data. Customize the plot with colors, themes, and labels to
+    differentiate between the selected and other countries.
+
+6.  **Export Plot**: Save the plot as a PNG file with specified
+    dimensions and resolution.
+
+### Chapter: Processing EFSA SGM Species Data in R
+
+#### Overview
+
+This chapter outlines a script to process data from the EFSA SGM species
+using various R libraries like `readxl`, `tidyverse`, `reshape2`, and
+others.
+
+#### Steps
+
+1.  **Import Libraries**: Libraries such as `readxl`, `tidyverse`,
+    `reshape2`, `httr`, `XML`, `rlist`, and `jsonlite` are loaded for
+    data manipulation, HTTP requests, and data transformation.
+
+2.  **EPPO API Key**: Read the EPPO API key from a file path.
+
+3.  **EPPO Code Retrieval Function**: Define `get_eppo_code` function to
+    fetch the EPPO code for a given pest name using an API call.
+
+4.  **Process species Data**:
+
+    - Read species data from an Excel file.
+    - Transform the data to a long format using `pivot_longer`.
+    - Clean and rename columns, especially the species names, removing
+      unnecessary characters and spaces.
+    - Create a new column `new_value` to classify interaction based on
+      certain criteria.
+
+5.  **Retrieve EPPO Codes**: Use `lapply` to apply `get_eppo_code`
+    function to multiple species to fetch their EPPO codes.
+
+6.  **Combine Data**: Merge the pest names with their corresponding EPPO
+    codes into a data frame. Replace any “\*\*\*\*NOT FOUND\*\*\*\*”
+    entries with `NA`.
+
+7.  **Finalize Data**: Use `left_join` to bind all relationships and
+    `distinct` to find unique records across all columns.
+
+8.  **Export Processed Data**: Save the cleaned and processed data as an
+    Excel file in a specified directory.
