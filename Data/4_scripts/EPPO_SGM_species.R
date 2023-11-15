@@ -65,4 +65,43 @@ rio::export(raw_data, "./Data/2_clean_data/EPPO_DB_pathway.xlsx")
 
 # END -------------------------------------------------------------------------------------------------------------------------------------------
 
+soil_data <- raw_data %>% filter(grepl("soil", pathway, ignore.case = TRUE))
+
+get_info_for_eppo <- function(eppo_code) {
+  eppo.info.url <- paste0("https://data.eppo.int/api/rest/1.0/taxon/", eppo_code)
+  eppo.get.request <- httr::GET(eppo.info.url, query = list(authtoken = EPPO_key))
+  info_content <- jsonlite::fromJSON(httr::content(eppo.get.request, as = 'text'), flatten = TRUE)
+  return(info_content)
+}
+
+input <- soil_data$eppocode
+
+# Initialize a counter variable
+counter <- 0
+
+# Modified lapply function with a counter
+result_list <- lapply(input, function(eppo_code) {
+  # Increment counter
+  counter <<- counter + 1
+  
+  # Print the current count
+  print(paste("Processing EPPO code number:", counter))
+  
+  # Call the function to get info for the current EPPO code
+  get_info_for_eppo(eppo_code)
+})
+
+
+# Convert the list of results into a data frame using bind_rows
+soil_df <- bind_rows(result_list) %>% distinct(eppocode, .keep_all = T ) %>% select(-attached_infos, -descinfos, -c_date, -m_date, -codeid, -status)
+
+# Now, the output_df contains the information for all EPPO codes in a data frame format.
+soil_df
+
+eppo_soil_pathway <- left_join(soil_data, soil_df)
+
+# -----------------------------------------------------------------------------------------------------------------------------------------------
+rio::export(eppo_soil_pathway, "./Data/2_clean_data/EPPO_DB_pathway_soil.xlsx")
+# END -------------------------------------------------------------------------------------------------------------------------------------------
+
 
