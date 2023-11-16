@@ -100,8 +100,26 @@ soil_df
 
 eppo_soil_pathway <- left_join(soil_data, soil_df)
 
+
+# add gbif taxonomy -----------------------------------------------------------------------------------------------------------------------------
+
+
+eppo_soil_pathway
+
+splist <- eppo_soil_pathway$prefname %>% 
+  unique() %>% 
+  taxize::get_gbifid_(method = "backbone") %>% 
+  purrr::imap(~ .x %>% mutate(input = .y)) %>% 
+  bind_rows()
+
+names(splist)
+
+eppo_soil_pathway_tax <- splist %>%   
+  select(input, scientificname, rank, status, matchtype ,order, phylum, kingdom) %>% 
+  as_tibble()
+
+eppo_soil_pathway <- left_join(eppo_soil_pathway_tax, eppo_soil_pathway, by = c("input" = "prefname"), relationship = "many-to-many")
+
 # -----------------------------------------------------------------------------------------------------------------------------------------------
 rio::export(eppo_soil_pathway, "./Data/2_clean_data/EPPO_DB_pathway_soil.xlsx")
 # END -------------------------------------------------------------------------------------------------------------------------------------------
-
-

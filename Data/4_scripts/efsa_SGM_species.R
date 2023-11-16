@@ -501,10 +501,6 @@ input_all  <- bind_rows(insects, weeds, viruses, phytoplasmas, nematodes, bacter
 as_tibble(input_all) %>% distinct(species)
 # -----------------------------------------------------------------------------------------------------------------------------------------------
 
-user <- "danief"  
-pwd <- "ZXasqw12" 
-email <- "floedaniel@gmail.com" 
-
 splist <- input_all$species %>% 
   unique() %>% 
   taxize::get_gbifid_(method = "backbone") %>% 
