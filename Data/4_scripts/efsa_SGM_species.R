@@ -518,3 +518,83 @@ data %>% group_split(kingdom)
 # -----------------------------------------------------------------------------------------------------------------------------------------------
 getwd()
 rio::export(splist, "./Data/2_processed_data/sgm_species_efsa_2015.xlsx")
+
+
+# bache read all EFSA files  --------------------------------------------------------------------------------------------------------------------
+
+library(readxl)
+library(tidyverse)
+
+file_list <- list.files(path = "./Data/2_clean_data/",
+                        pattern = "EFSA.*\\.xlsx$",
+                        ignore.case=T)
+
+data_list <- lapply(file_list, function(x) read_excel(file.path("./Data/2_clean_data/", x)))
+combined_data <- do.call(rbind, data_list)
+
+combined_eppo_codes <- combined_data %>% distinct(eppo_code)
+
+# -----------------------------------------------------------------------------------------------------------------------------------------------
+api_key_file_path <- file.path("C:/Users/dafl/Desktop/EPPO_API_KEY.txt")
+EPPO_key <- readLines(api_key_file_path, warn = FALSE)
+
+# function to get EPPO distribution -------------------------------------------------------------------------------------------------------------
+
+input <- combined_eppo_codes$eppo_code
+
+get_names_content <- function(eppo_code, eppo_token) {
+  eppo.distr.url <- paste0("https://gd.eppo.int/taxon/", eppo_code, "/distribution")
+  eppo.get.request <- httr::GET(eppo.distr.url, query = list(apikey = EPPO_key, details = "true"))
+  table_content <- httr::content(eppo.get.request, as = 'text')
+  tables <- XML::readHTMLTable(table_content)
+  tables <- rlist::list.clean(tables, fun = is.null, recursive = FALSE)
+  
+  if (length(tables) == 0) {
+    message(paste("No data found for EPPO code:", eppo_code))
+    return(NULL)
+  }
+  
+  distr_table <- tables$dttable
+  distr_table <- distr_table %>% select(Continent, Country, State, Status)
+  distr_table$EPPO_code <- eppo_code  # Add the EPPO code as a new column
+  return(distr_table)
+}
+
+
+# Use lapply to process multiple inputs and store the output in a list
+output_list <- lapply(input, get_names_content, eppo_token = EPPO_token)
+
+# Filter out NULL elements (for EPPO codes with no data returned)
+output_list <- output_list[!sapply(output_list, is.null)]
+
+if (length(output_list) == 0) {
+  stop("No data found for any of the EPPO codes.")
+}
+
+# Combine the list elements into a single data frame
+output_df <- do.call(rbind, output_list) %>% as_tibble()
+
+# Reset row names
+rownames(output_df) <- NULL
+
+output_df
+
+# -----------------------------------------------------------------------------------------------------------------------------------------------
+# subset 
+europe_output_df <- output_df %>%  
+  filter(Continent  == "Europe") %>% 
+  filter(grepl("Present", Status)) 
+
+# new column with presence in europe 
+europe_output_df <- europe_output_df %>% 
+  mutate(Europe = if_else(Continent == "Europe", "Yes", "No"),
+         Norway = if_else(Country == "Norway", "Yes", "No")) %>% 
+  select(EPPO_code, Europe, Norway)  
+
+# -----------------------------------------------------------------------------------------------------------------------------------------------
+# write data to folder
+rio::export(europe_output_df, file = "./Data/2_clean_data/EFSA_supporting_information_Europe.csv")
+# -----------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
